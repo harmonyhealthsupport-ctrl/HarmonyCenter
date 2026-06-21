@@ -59,15 +59,25 @@ export default function SettingsPage() {
   };
 
   useEffect(() => {
-    const checkUser = async () => {
+    const checkUserAndRole = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) router.push("/login");
-      else {
-        setUser(session.user);
-        fetchStaff();
+      if (!session) return router.push("/login");
+
+      // PENGESAHAN PERANAN: Hanya Admin Dibenarkan Masuk
+      const { data: profile } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("email", session.user.email)
+        .maybeSingle();
+
+      if (!profile || profile.role?.toLowerCase() !== "admin") {
+        return router.push("/account"); // Tendang pengguna biasa ke halaman profil mereka
       }
+
+      setUser(session.user);
+      fetchStaff();
     };
-    checkUser();
+    checkUserAndRole();
   }, [router]);
 
   // FUNGSI PENGURUSAN PROFIL STAF
@@ -82,7 +92,8 @@ export default function SettingsPage() {
   const handleEdit = (staff) => {
     setFormData({
       full_name: staff.full_name || "", display_name: staff.display_name || "", email: staff.email || "",
-      password: staff.password || "", role: staff.role || "User", department: staff.department || "Sales",
+      password: "", // Kosongkan password semasa suntingan
+      role: staff.role || "User", department: staff.department || "Sales",
       modules: staff.modules || ["dashboard"],
     });
     setEditingId(staff.id);
@@ -118,19 +129,36 @@ export default function SettingsPage() {
     setSubmitLoading(true);
     let error;
 
+    // Asingkan data password supaya tak dimasukkan ke jadual user_roles
+    const { password, ...updateData } = formData;
+
     if (editingId) {
-      const res = await supabase.from("user_roles").update(formData).eq("id", editingId);
+      // SUNTINGAN: Hanya kemas kini maklumat, bukan kata laluan
+      const res = await supabase.from("user_roles").update(updateData).eq("id", editingId);
       error = res.error;
     } else {
-      await supabase.auth.signUp({ email: formData.email, password: formData.password });
-      const res = await supabase.from("user_roles").insert([formData]);
+      // DAFTAR BARU: Cipta akaun log masuk & profil serentak
+      if (!password) {
+        alert("Kata laluan diperlukan untuk staf baru.");
+        setSubmitLoading(false);
+        return;
+      }
+      const authRes = await supabase.auth.signUp({ email: formData.email, password });
+      if (authRes.error) {
+        alert("Ralat Auth: " + authRes.error.message);
+        setSubmitLoading(false);
+        return;
+      }
+      const res = await supabase.from("user_roles").insert([updateData]);
       error = res.error;
     }
 
     if (!error) {
       setShowModal(false);
       fetchStaff();
-    } else alert("Ralat memproses rekod staf: " + error.message);
+    } else {
+      alert("Ralat memproses rekod staf: " + error.message);
+    }
     setSubmitLoading(false);
   };
 
@@ -192,8 +220,7 @@ export default function SettingsPage() {
       <Sidebar />
 
       <div className="flex-1 flex flex-col h-screen overflow-hidden relative">
-        {/* PENGGUNAAN KOMPONEN HEADER */}
-        <Header title="Tetapan Sistem & Pengguna" subtitle="Urus profil, kata laluan dan tahap akses staf." />
+        <Header title="Tetapan Sistem & Pengguna" subtitle="Urus profil, dan tahap akses staf (Mod Admin)." />
 
         <main className="flex-1 overflow-y-auto p-6 lg:px-10 pb-20">
           <div className="bg-white rounded-[20px] shadow-[0_4px_20px_rgba(0,0,0,0.02)] border border-slate-100 overflow-hidden">
@@ -238,7 +265,7 @@ export default function SettingsPage() {
                         </td>
                         <td className="px-6 py-4 text-sm font-medium text-slate-700">{staff.department}</td>
                         <td className="px-6 py-4">
-                          <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold ${staff.role === 'Admin' ? 'bg-purple-100 text-purple-700' : 'bg-slate-100 text-slate-700'}`}>
+                          <span className={`inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold ${staff.role?.toLowerCase() === 'admin' ? 'bg-purple-100 text-purple-700' : 'bg-slate-100 text-slate-700'}`}>
                             {staff.role}
                           </span>
                         </td>
@@ -280,15 +307,20 @@ export default function SettingsPage() {
                     <div><label className="block text-sm font-semibold text-slate-700 mb-1">Nama Penuh</label><input type="text" required value={formData.full_name} onChange={(e) => setFormData({...formData, full_name: e.target.value})} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 text-sm" /></div>
                     <div><label className="block text-sm font-semibold text-slate-700 mb-1">Nama Panggilan (Display)</label><input type="text" value={formData.display_name} onChange={(e) => setFormData({...formData, display_name: e.target.value})} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 text-sm" placeholder="Contoh: Hajar" /></div>
                     <div><label className="block text-sm font-semibold text-slate-700 mb-1">Alamat E-mel</label><input type="email" required value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} disabled={editingId} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 text-sm disabled:opacity-50" /></div>
-                    <div className="relative">
-                      <label className="block text-sm font-semibold text-slate-700 mb-1">Kata Laluan</label>
+                    
+                    {/* Sembunyikan ruangan ini jika admin sedang kemaskini akaun sedia ada */}
+                    {!editingId && (
                       <div className="relative">
-                        <input type={showPassword ? "text" : "password"} required value={formData.password} onChange={(e) => setFormData({...formData, password: e.target.value})} placeholder="Tetapkan kata laluan..." className="w-full pl-4 pr-12 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 text-sm" />
-                        <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600">
-                          {showPassword ? (<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" /></svg>) : (<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>)}
-                        </button>
+                        <label className="block text-sm font-semibold text-slate-700 mb-1">Kata Laluan</label>
+                        <div className="relative">
+                          <input type={showPassword ? "text" : "password"} required={!editingId} value={formData.password} onChange={(e) => setFormData({...formData, password: e.target.value})} placeholder="Tetapkan kata laluan..." className="w-full pl-4 pr-12 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 text-sm" />
+                          <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600">
+                            {showPassword ? (<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" /></svg>) : (<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268-2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>)}
+                          </button>
+                        </div>
                       </div>
-                    </div>
+                    )}
+
                     <div>
                       <label className="block text-sm font-semibold text-slate-700 mb-1">Peranan (Role)</label>
                       <div className="flex gap-2">
@@ -311,7 +343,7 @@ export default function SettingsPage() {
                   <div className="pt-4 border-t border-slate-100">
                     <label className="block text-sm font-semibold text-blue-700 mb-3 flex items-center"><svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg> Akses Modul Sidebar</label>
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-3 bg-slate-50 p-4 rounded-xl border border-slate-100">
-                      {[{ id: 'dashboard', label: 'Dashboard Utama' }, { id: 'sales', label: 'CRM & Jualan' }, { id: 'content-stats', label: 'Creator Stats' }, { id: 'leads', label: 'Leads Management' }, { id: 'inventory', label: 'Pengurusan Stok' }, { id: 'hr', label: 'HR & Payroll' }, { id: 'tasks', label: 'Task Manager' }, { id: 'settings', label: 'User Settings' }].map((mod) => (
+                      {[{ id: 'dashboard', label: 'Dashboard Utama' }, { id: 'sales', label: 'CRM & Jualan' }, { id: 'content-stats', label: 'Creator Stats' }, { id: 'leads', label: 'Leads Management' }, { id: 'inventory', label: 'Pengurusan Stok' }, { id: 'hr', label: 'HR & Payroll' }, { id: 'tasks', label: 'Task Manager' }, { id: 'account', label: 'Akaun Sendiri' }, { id: 'settings', label: 'Sistem Admin' }].map((mod) => (
                         <label key={mod.id} className="flex items-center space-x-2 cursor-pointer p-2 rounded-lg hover:bg-white border border-transparent hover:border-slate-200 transition-all shadow-sm">
                           <input type="checkbox" checked={formData.modules.includes(mod.id)} onChange={() => handleModuleToggle(mod.id)} className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer"/>
                           <span className="text-xs font-semibold text-slate-700">{mod.label}</span>
