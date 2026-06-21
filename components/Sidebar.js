@@ -97,13 +97,13 @@ export default function Sidebar() {
       {/* SIDEBAR DRAWER */}
       <div className={`fixed top-0 left-0 h-screen w-72 bg-white flex flex-col shadow-2xl border-r border-slate-200 z-[100] transform transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         
-        {/* LOGO & BRANDING */}
+        {/* LOGO & BRANDING (KEMAS KINI DI SINI) */}
         <div className="p-6 pb-5 flex justify-between items-center bg-white z-20 border-b border-slate-100 shrink-0">
           <div>
-            <h2 className="text-3xl font-black text-slate-800 tracking-tighter flex items-center">
-              <span className="text-transparent bg-clip-text bg-gradient-to-br from-blue-600 to-indigo-600 mr-1">H</span>armony Health
+            <h2 className="text-2xl font-black text-slate-800 tracking-tight flex items-center">
+              Harmony<span className="text-blue-600 ml-1.5">Health</span>
             </h2>
-            <p className="text-slate-400 text-[9px] mt-1 font-extrabold tracking-[0.2em] uppercase">Management Center</p>
+            <p className="text-slate-400 text-[10px] mt-0.5 font-bold tracking-widest uppercase">Management Center</p>
           </div>
           <button onClick={() => setIsOpen(false)} className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-full transition-colors">
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
