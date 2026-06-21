@@ -11,6 +11,12 @@ export default function Sidebar() {
   const [allowedModules, setAllowedModules] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
   
+  // Data Profil
+  const [userEmail, setUserEmail] = useState("");
+  const [userName, setUserName] = useState("Memuatkan...");
+  const [userRole, setUserRole] = useState("STAFF");
+  const [avatarUrl, setAvatarUrl] = useState(null);
+  
   // State untuk menu Accordion (Buka/Tutup)
   const [expanded, setExpanded] = useState({
     crm: false,
@@ -23,16 +29,25 @@ export default function Sidebar() {
     const fetchUserAccess = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user?.email) {
+        setUserEmail(session.user.email);
+        
         const { data: profile } = await supabase
           .from("user_roles")
-          .select("modules")
+          .select("modules, role, full_name, display_name, avatar_url")
           .eq("email", session.user.email)
           .single();
           
-        if (profile && profile.modules) {
-          setAllowedModules(profile.modules);
-        } else {
-          setAllowedModules(["dashboard", "sales", "content-stats", "leads", "inventory", "tasks", "account"]); 
+        if (profile) {
+          if (profile.modules) {
+            setAllowedModules(profile.modules);
+          } else {
+            // Default akses jika modul kosong
+            setAllowedModules(["dashboard", "sales", "content-stats", "leads", "inventory", "tasks", "account"]); 
+          }
+          
+          setUserRole(profile.role ? profile.role.toUpperCase() : "STAFF");
+          setUserName(profile.display_name || profile.full_name || session.user.email.split('@')[0]);
+          if (profile.avatar_url) setAvatarUrl(profile.avatar_url);
         }
       }
     };
@@ -50,7 +65,7 @@ export default function Sidebar() {
       setExpanded(prev => ({ ...prev, creator: true }));
     } else if (['/leads', '/inventory'].includes(pathname)) {
       setExpanded(prev => ({ ...prev, operasi: true }));
-    } else if (['/hr', '/tasks', '/account'].includes(pathname)) {
+    } else if (['/hr', '/tasks', '/account', '/settings'].includes(pathname)) {
       setExpanded(prev => ({ ...prev, pengurusan: true }));
     }
   }, [pathname]);
@@ -67,9 +82,11 @@ export default function Sidebar() {
     router.push(path);
   };
 
+  const initial = userEmail ? userEmail.charAt(0).toUpperCase() : "U";
+
   return (
     <>
-      {/* LATAR BELAKANG GELAP TERAPUNG (Klik untuk tutup) */}
+      {/* LATAR BELAKANG GELAP TERAPUNG */}
       {isOpen && (
         <div 
           className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[90] transition-opacity"
@@ -77,10 +94,10 @@ export default function Sidebar() {
         ></div>
       )}
 
-      {/* SIDEBAR DRAWER (TERSEMBUNYI SECARA LALAI) */}
+      {/* SIDEBAR DRAWER */}
       <div className={`fixed top-0 left-0 h-screen w-72 bg-white flex flex-col shadow-2xl border-r border-slate-200 z-[100] transform transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         
-        {/* LOGO & BRANDING SAHAJA (TIADA KOTAK PROFIL) */}
+        {/* LOGO & BRANDING */}
         <div className="p-6 pb-5 flex justify-between items-center bg-white z-20 border-b border-slate-100 shrink-0">
           <div>
             <h2 className="text-3xl font-black text-slate-800 tracking-tighter flex items-center">
@@ -88,7 +105,6 @@ export default function Sidebar() {
             </h2>
             <p className="text-slate-400 text-[9px] mt-1 font-extrabold tracking-[0.2em] uppercase">Command Center</p>
           </div>
-          {/* BUTANG TUTUP KETIKA SIDEBAR TERBUKA */}
           <button onClick={() => setIsOpen(false)} className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-full transition-colors">
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
@@ -177,7 +193,7 @@ export default function Sidebar() {
           )}
 
           {/* SEKSYEN 4: PENGURUSAN */}
-          {(allowedModules.includes("hr") || allowedModules.includes("tasks") || allowedModules.includes("account")) && (
+          {(allowedModules.includes("hr") || allowedModules.includes("tasks") || allowedModules.includes("account") || allowedModules.includes("settings")) && (
             <div className="mb-2">
               <button onClick={() => toggleMenu('pengurusan')} className="w-full flex items-center justify-between px-4 py-3 rounded-xl hover:bg-slate-50 transition-colors group outline-none">
                 <span className="text-xs font-extrabold text-slate-500 uppercase tracking-widest group-hover:text-orange-600 transition-colors">Pengurusan</span>
@@ -196,9 +212,18 @@ export default function Sidebar() {
                       Task Manager
                     </button>
                   )}
-                  {(allowedModules.includes("settings") || allowedModules.includes("account")) && (
-                    <button onClick={() => navigate('/account')} className={`w-full flex items-center px-4 py-2.5 rounded-xl font-bold transition-all text-sm ${pathname === '/account' ? 'bg-slate-100 text-slate-800' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}>
-                      User Settings
+                  
+                  {/* BUTANG 1: AKAUN SENDIRI (Semua staf ada) */}
+                  {allowedModules.includes("account") && (
+                    <button onClick={() => navigate('/account')} className={`w-full flex items-center px-4 py-2.5 rounded-xl font-bold transition-all text-sm ${pathname === '/account' ? 'bg-orange-50 text-orange-700' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}>
+                      Akaun Sendiri
+                    </button>
+                  )}
+
+                  {/* BUTANG 2: TETAPAN SISTEM ADMIN (Admin sahaja) */}
+                  {allowedModules.includes("settings") && (
+                    <button onClick={() => navigate('/settings')} className={`w-full flex items-center px-4 py-2.5 rounded-xl font-bold transition-all text-sm ${pathname === '/settings' ? 'bg-slate-100 text-slate-800' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}>
+                      Sistem Admin
                     </button>
                   )}
                 </div>
