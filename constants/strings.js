@@ -1,0 +1,41 @@
+export const STRINGS = {
+  GLOBAL: {
+    LOADING: "Loading...",
+    SUBMITTING: "Processing...",
+    CANCEL: "Cancel",
+    SAVE: "Save Changes",
+    DELETE: "Delete",
+    ADD_NEW: "Add New",
+    LOGOUT: "Logout",
+  },
+  LOGIN: {
+    TITLE: "Login",
+    WELCOME: "Please enter your details to access the portal.",
+    LABEL_USERNAME: "Username or Email",
+    LABEL_PASSWORD: "Password",
+    PLACEHOLDER_USERNAME: "Enter username...",
+    REMEMBER_ME: "Remember me",
+    FORGOT_PASSWORD: "Forgot password?",
+    BTN_SUBMIT: "Login to Account",
+    ERROR_INVALID: "Invalid username or password. Please try again.",
+    ERROR_NOT_FOUND: "Username not found. Please check your spelling.",
+  },
+  DASHBOARD: {
+    TITLE: "Sales Dashboard",
+    SUBTITLE: "Real-time business analysis and performance.",
+    FILTER_FROM: "From Date",
+    FILTER_TO: "To Date",
+    FILTER_DEPT: "Department",
+    FILTER_STAFF: "Assigned Staff",
+    FILTER_SOURCE: "Source (Platform)",
+    FILTER_PRODUCT: "Product",
+    KPI_SALES: "Total Sales",
+    KPI_ORDERS: "Total Orders",
+    KPI_AVG_VALUE: "Avg Order Value",
+    TOP_STAFF: "Top Performing Staff",
+    CUSTOMER_ANALYTICS: "Customer Base Analytics",
+    SALES_PLATFORM: "Sales By Platform / Source",
+    SALES_PRODUCT: "Sales By Product",
+    NO_DATA: "No data available."
+  }
+};
