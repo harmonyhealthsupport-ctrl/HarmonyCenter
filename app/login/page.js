@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("");
+  const [loginId, setLoginId] = useState(""); // Tukar dari email ke loginId
   const [password, setPassword] = useState("");
   const [errorMsg, setErrorMsg] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -17,9 +17,29 @@ export default function LoginPage() {
     setLoading(true);
     setErrorMsg(null);
 
-    // Send login request to Supabase
+    let finalEmail = loginId.trim();
+
+    // LOGIK BARU: Jika pengguna tak letak '@', kita anggap ia adalah Username
+    if (!finalEmail.includes('@')) {
+      // Cari e-mel yang sepadan dengan Username (display_name) di database
+      const { data: userRecord, error: fetchError } = await supabase
+        .from('user_roles')
+        .select('email')
+        .ilike('display_name', finalEmail) // Guna ilike supaya tak kisah huruf besar/kecil
+        .maybeSingle();
+
+      if (userRecord && userRecord.email) {
+        finalEmail = userRecord.email; // Tukar username jadi e-mel sebenar
+      } else {
+        setErrorMsg("Username not found. Please check your spelling.");
+        setLoading(false);
+        return;
+      }
+    }
+
+    // Hantar request login ke Supabase guna e-mel yang dah diproses
     const { data, error } = await supabase.auth.signInWithPassword({
-      email: email,
+      email: finalEmail,
       password: password,
     });
 
@@ -27,15 +47,19 @@ export default function LoginPage() {
       setErrorMsg("Invalid username or password. Please try again.");
       setLoading(false);
     } else {
-      // If successful, redirect user to Dashboard
       router.push("/dashboard"); 
     }
+  };
+
+  const handleForgotPassword = (e) => {
+    e.preventDefault();
+    alert("The Forgot Password feature is currently under development.");
   };
 
   return (
     <div className="flex flex-col lg:flex-row min-h-screen bg-white">
       
-      {/* Branding Section (Left) */}
+      {/* Branding Section */}
       <div className="lg:w-1/2 bg-slate-50 flex flex-col justify-center items-center p-8 lg:p-12 relative overflow-hidden border-b lg:border-b-0 lg:border-r border-slate-200">
         <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-blue-300 rounded-full blur-[120px] opacity-60"></div>
         <div className="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-indigo-300 rounded-full blur-[120px] opacity-50"></div>
@@ -63,7 +87,7 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* Login Form Section (Right) */}
+      {/* Login Form Section */}
       <div className="w-full lg:w-1/2 flex flex-col justify-center px-6 sm:px-16 md:px-24 py-12 bg-white z-20">
         <div className="max-w-md w-full mx-auto space-y-8">
           
@@ -74,10 +98,8 @@ export default function LoginPage() {
 
           <form onSubmit={handleLogin} className="space-y-6 mt-8">
             
-            {/* CLEAN ERROR MESSAGE DISPLAY */}
             {errorMsg && (
               <div className="flex items-center p-4 bg-red-50 border-l-4 border-red-500 rounded-r-xl shadow-sm text-red-700 transition-all duration-300">
-                {/* Warning Icon (SVG) */}
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                 </svg>
@@ -86,13 +108,13 @@ export default function LoginPage() {
             )}
 
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">Username</label>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">Username or Email</label>
               <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                type="text" // Tukar dari email ke text supaya boleh masuk username
+                value={loginId}
+                onChange={(e) => setLoginId(e.target.value)}
                 className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-slate-50 text-slate-900 placeholder-slate-400"
-                placeholder="name@company.com"
+                placeholder="kimal12"
                 required
               />
             </div>
@@ -117,7 +139,7 @@ export default function LoginPage() {
                 </label>
               </div>
               <div className="text-sm">
-                <a href="#" className="font-semibold text-blue-600 hover:text-blue-700 transition-colors">
+                <a href="#" onClick={handleForgotPassword} className="font-semibold text-blue-600 hover:text-blue-700 transition-colors">
                   Forgot password?
                 </a>
               </div>
