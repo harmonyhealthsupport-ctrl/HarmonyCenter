@@ -109,10 +109,12 @@ export default function LoginPage() {
 
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-2">Username or Email</label>
+              {/* DITAMBAH autoComplete="off" DI SINI */}
               <input
-                type="text" // Tukar dari email ke text supaya boleh masuk username
+                type="text" 
                 value={loginId}
                 onChange={(e) => setLoginId(e.target.value)}
+                autoComplete="off" 
                 className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-slate-50 text-slate-900 placeholder-slate-400"
                 placeholder="kimal12"
                 required
@@ -121,10 +123,12 @@ export default function LoginPage() {
 
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-2">Password</label>
+              {/* DITAMBAH autoComplete="new-password" DI SINI */}
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                autoComplete="new-password"
                 className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-slate-50 text-slate-900 placeholder-slate-400"
                 placeholder="••••••••"
                 required
