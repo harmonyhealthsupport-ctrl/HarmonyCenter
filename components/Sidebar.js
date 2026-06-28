@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { supabase } from "../lib/supabase";
+import { ROUTES } from "../constants"; // IMPORT PEMALAR (CONSTANTS)
 
 export default function Sidebar() {
   const router = useRouter();
@@ -58,21 +59,22 @@ export default function Sidebar() {
     return () => window.removeEventListener('toggleSidebar', handleToggle);
   }, []);
 
+  // GUNAKAN PEMALAR (ROUTES) UNTUK SEMAKAN LALUAN AKTIF
   useEffect(() => {
-    if (['/dashboard', '/sales', '/customers'].includes(pathname)) {
+    if ([ROUTES.DASHBOARD, ROUTES.SALES_FORM, ROUTES.CUSTOMERS].includes(pathname)) {
       setExpanded(prev => ({ ...prev, crm: true }));
-    } else if (['/creator-dashboard', '/creator-daily', '/creator-library'].includes(pathname)) {
+    } else if ([ROUTES.CREATOR_DASHBOARD, ROUTES.CREATOR_DAILY, ROUTES.CREATOR_LIBRARY].includes(pathname)) {
       setExpanded(prev => ({ ...prev, creator: true }));
-    } else if (['/leads', '/inventory'].includes(pathname)) {
+    } else if ([ROUTES.LEADS, ROUTES.INVENTORY].includes(pathname)) {
       setExpanded(prev => ({ ...prev, operations: true }));
-    } else if (['/hr', '/tasks', '/account', '/settings'].includes(pathname)) {
+    } else if ([ROUTES.HR, ROUTES.TASKS, ROUTES.ACCOUNT, ROUTES.SETTINGS].includes(pathname)) {
       setExpanded(prev => ({ ...prev, management: true }));
     }
   }, [pathname]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    router.push("/login");
+    router.push(ROUTES.LOGIN); // GUNA PEMALAR
   };
 
   const toggleMenu = (key) => setExpanded(prev => ({ ...prev, [key]: !prev[key] }));
@@ -97,7 +99,7 @@ export default function Sidebar() {
       {/* SIDEBAR DRAWER */}
       <div className={`fixed top-0 left-0 h-screen w-72 bg-white flex flex-col shadow-2xl border-r border-slate-200 z-[100] transform transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         
-        {/* LOGO & BRANDING (KEMAS KINI DI SINI) */}
+        {/* LOGO & BRANDING */}
         <div className="p-6 pb-5 flex justify-between items-center bg-white z-20 border-b border-slate-100 shrink-0">
           <div>
             <h2 className="text-2xl font-black text-slate-800 tracking-tight flex items-center">
@@ -124,17 +126,17 @@ export default function Sidebar() {
               <div className={`overflow-hidden transition-all duration-300 ease-in-out ${expanded.crm ? 'max-h-60 opacity-100 mt-1' : 'max-h-0 opacity-0'}`}>
                 <div className="space-y-1 pl-4 ml-4 border-l-2 border-slate-100 py-2">
                   {allowedModules.includes("dashboard") && (
-                    <button onClick={() => navigate('/dashboard')} className={`w-full flex items-center px-4 py-2.5 rounded-xl font-bold transition-all text-sm ${pathname === '/dashboard' ? 'bg-blue-50 text-blue-700' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}>
+                    <button onClick={() => navigate(ROUTES.DASHBOARD)} className={`w-full flex items-center px-4 py-2.5 rounded-xl font-bold transition-all text-sm ${pathname === ROUTES.DASHBOARD ? 'bg-blue-50 text-blue-700' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}>
                       Sales Dashboard
                     </button>
                   )}
                   {allowedModules.includes("sales") && (
-                    <button onClick={() => navigate('/sales')} className={`w-full flex items-center px-4 py-2.5 rounded-xl font-bold transition-all text-sm ${pathname === '/sales' ? 'bg-blue-50 text-blue-700' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}>
+                    <button onClick={() => navigate(ROUTES.SALES_FORM)} className={`w-full flex items-center px-4 py-2.5 rounded-xl font-bold transition-all text-sm ${pathname === ROUTES.SALES_FORM ? 'bg-blue-50 text-blue-700' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}>
                       Sales Form
                     </button>
                   )}
                   {allowedModules.includes("sales") && (
-                    <button onClick={() => navigate('/customers')} className={`w-full flex items-center px-4 py-2.5 rounded-xl font-bold transition-all text-sm ${pathname === '/customers' ? 'bg-blue-50 text-blue-700' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}>
+                    <button onClick={() => navigate(ROUTES.CUSTOMERS)} className={`w-full flex items-center px-4 py-2.5 rounded-xl font-bold transition-all text-sm ${pathname === ROUTES.CUSTOMERS ? 'bg-blue-50 text-blue-700' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}>
                       Customer Database
                     </button>
                   )}
@@ -153,13 +155,13 @@ export default function Sidebar() {
               
               <div className={`overflow-hidden transition-all duration-300 ease-in-out ${expanded.creator ? 'max-h-60 opacity-100 mt-1' : 'max-h-0 opacity-0'}`}>
                 <div className="space-y-1 pl-4 ml-4 border-l-2 border-slate-100 py-2">
-                  <button onClick={() => navigate('/creator-dashboard')} className={`w-full flex items-center px-4 py-2.5 rounded-xl font-bold transition-all text-sm ${pathname === '/creator-dashboard' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}>
+                  <button onClick={() => navigate(ROUTES.CREATOR_DASHBOARD)} className={`w-full flex items-center px-4 py-2.5 rounded-xl font-bold transition-all text-sm ${pathname === ROUTES.CREATOR_DASHBOARD ? 'bg-indigo-50 text-indigo-700' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}>
                     Analytics Dashboard
                   </button>
-                  <button onClick={() => navigate('/creator-daily')} className={`w-full flex items-center px-4 py-2.5 rounded-xl font-bold transition-all text-sm ${pathname === '/creator-daily' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}>
+                  <button onClick={() => navigate(ROUTES.CREATOR_DAILY)} className={`w-full flex items-center px-4 py-2.5 rounded-xl font-bold transition-all text-sm ${pathname === ROUTES.CREATOR_DAILY ? 'bg-indigo-50 text-indigo-700' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}>
                     Daily Achievement
                   </button>
-                  <button onClick={() => navigate('/creator-library')} className={`w-full flex items-center px-4 py-2.5 rounded-xl font-bold transition-all text-sm ${pathname === '/creator-library' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}>
+                  <button onClick={() => navigate(ROUTES.CREATOR_LIBRARY)} className={`w-full flex items-center px-4 py-2.5 rounded-xl font-bold transition-all text-sm ${pathname === ROUTES.CREATOR_LIBRARY ? 'bg-indigo-50 text-indigo-700' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}>
                     Data Library
                   </button>
                 </div>
@@ -178,12 +180,12 @@ export default function Sidebar() {
               <div className={`overflow-hidden transition-all duration-300 ease-in-out ${expanded.operations ? 'max-h-60 opacity-100 mt-1' : 'max-h-0 opacity-0'}`}>
                 <div className="space-y-1 pl-4 ml-4 border-l-2 border-slate-100 py-2">
                   {allowedModules.includes("leads") && (
-                    <button onClick={() => navigate('/leads')} className={`w-full flex items-center px-4 py-2.5 rounded-xl font-bold transition-all text-sm ${pathname === '/leads' ? 'bg-emerald-50 text-emerald-700' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}>
+                    <button onClick={() => navigate(ROUTES.LEADS)} className={`w-full flex items-center px-4 py-2.5 rounded-xl font-bold transition-all text-sm ${pathname === ROUTES.LEADS ? 'bg-emerald-50 text-emerald-700' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}>
                       Leads Management
                     </button>
                   )}
                   {allowedModules.includes("inventory") && (
-                    <button onClick={() => navigate('/inventory')} className={`w-full flex items-center px-4 py-2.5 rounded-xl font-bold transition-all text-sm ${pathname === '/inventory' ? 'bg-emerald-50 text-emerald-700' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}>
+                    <button onClick={() => navigate(ROUTES.INVENTORY)} className={`w-full flex items-center px-4 py-2.5 rounded-xl font-bold transition-all text-sm ${pathname === ROUTES.INVENTORY ? 'bg-emerald-50 text-emerald-700' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}>
                       Inventory System
                     </button>
                   )}
@@ -203,26 +205,26 @@ export default function Sidebar() {
               <div className={`overflow-hidden transition-all duration-300 ease-in-out ${expanded.management ? 'max-h-60 opacity-100 mt-1' : 'max-h-0 opacity-0'}`}>
                 <div className="space-y-1 pl-4 ml-4 border-l-2 border-slate-100 py-2">
                   {allowedModules.includes("hr") && (
-                    <button onClick={() => navigate('/hr')} className={`w-full flex items-center px-4 py-2.5 rounded-xl font-bold transition-all text-sm ${pathname === '/hr' ? 'bg-orange-50 text-orange-700' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}>
+                    <button onClick={() => navigate(ROUTES.HR)} className={`w-full flex items-center px-4 py-2.5 rounded-xl font-bold transition-all text-sm ${pathname === ROUTES.HR ? 'bg-orange-50 text-orange-700' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}>
                       HR & Payroll
                     </button>
                   )}
                   {allowedModules.includes("tasks") && (
-                    <button onClick={() => navigate('/tasks')} className={`w-full flex items-center px-4 py-2.5 rounded-xl font-bold transition-all text-sm ${pathname === '/tasks' ? 'bg-orange-50 text-orange-700' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}>
+                    <button onClick={() => navigate(ROUTES.TASKS)} className={`w-full flex items-center px-4 py-2.5 rounded-xl font-bold transition-all text-sm ${pathname === ROUTES.TASKS ? 'bg-orange-50 text-orange-700' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}>
                       Task Manager
                     </button>
                   )}
                   
                   {/* BUTTON 1: MY ACCOUNT (All staff) */}
                   {allowedModules.includes("account") && (
-                    <button onClick={() => navigate('/account')} className={`w-full flex items-center px-4 py-2.5 rounded-xl font-bold transition-all text-sm ${pathname === '/account' ? 'bg-orange-50 text-orange-700' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}>
+                    <button onClick={() => navigate(ROUTES.ACCOUNT)} className={`w-full flex items-center px-4 py-2.5 rounded-xl font-bold transition-all text-sm ${pathname === ROUTES.ACCOUNT ? 'bg-orange-50 text-orange-700' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}>
                       My Account
                     </button>
                   )}
 
                   {/* BUTTON 2: SYSTEM ADMIN SETTINGS (Admin only) */}
                   {allowedModules.includes("settings") && (
-                    <button onClick={() => navigate('/settings')} className={`w-full flex items-center px-4 py-2.5 rounded-xl font-bold transition-all text-sm ${pathname === '/settings' ? 'bg-slate-100 text-slate-800' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}>
+                    <button onClick={() => navigate(ROUTES.SETTINGS)} className={`w-full flex items-center px-4 py-2.5 rounded-xl font-bold transition-all text-sm ${pathname === ROUTES.SETTINGS ? 'bg-slate-100 text-slate-800' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}>
                       System Admin
                     </button>
                   )}
