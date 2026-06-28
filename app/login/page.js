@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 
 export default function LoginPage() {
-  const [loginId, setLoginId] = useState(""); // Tukar dari email ke loginId
+  const [loginId, setLoginId] = useState(""); 
   const [password, setPassword] = useState("");
   const [errorMsg, setErrorMsg] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -17,34 +17,36 @@ export default function LoginPage() {
     setLoading(true);
     setErrorMsg(null);
 
-    let finalEmail = loginId.trim();
+    const finalUsername = loginId.trim();
 
-    // LOGIK BARU: Jika pengguna tak letak '@', kita anggap ia adalah Username
-    if (!finalEmail.includes('@')) {
-      // Cari e-mel yang sepadan dengan Username (display_name) di database
-      const { data: userRecord, error: fetchError } = await supabase
-        .from('user_roles')
-        .select('email')
-        .ilike('display_name', finalEmail) // Guna ilike supaya tak kisah huruf besar/kecil
-        .maybeSingle();
-
-      if (userRecord && userRecord.email) {
-        finalEmail = userRecord.email; // Tukar username jadi e-mel sebenar
-      } else {
-        setErrorMsg("Username not found. Please check your spelling.");
-        setLoading(false);
-        return;
-      }
+    // STRICT VALIDATION: Reject emails, only allow Username
+    if (finalUsername.includes('@')) {
+      setErrorMsg("Please enter your Username only. Emails are not accepted.");
+      setLoading(false);
+      return;
     }
 
-    // Hantar request login ke Supabase guna e-mel yang dah diproses
+    // Find the exact email matching the Username (display_name) in the database
+    const { data: userRecord, error: fetchError } = await supabase
+      .from('user_roles')
+      .select('email')
+      .ilike('display_name', finalUsername) 
+      .maybeSingle();
+
+    if (!userRecord || !userRecord.email) {
+      setErrorMsg("Username not found. Please check your spelling.");
+      setLoading(false);
+      return;
+    }
+
+    // Authenticate with Supabase using the retrieved email
     const { data, error } = await supabase.auth.signInWithPassword({
-      email: finalEmail,
+      email: userRecord.email,
       password: password,
     });
 
     if (error) {
-      setErrorMsg("Invalid username or password. Please try again.");
+      setErrorMsg("Invalid username or password.");
       setLoading(false);
     } else {
       router.push("/dashboard"); 
@@ -108,22 +110,20 @@ export default function LoginPage() {
             )}
 
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">Username or Email</label>
-              {/* DITAMBAH autoComplete="off" DI SINI */}
+              <label className="block text-sm font-semibold text-slate-700 mb-2">Username</label>
               <input
                 type="text" 
                 value={loginId}
                 onChange={(e) => setLoginId(e.target.value)}
                 autoComplete="off" 
                 className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-slate-50 text-slate-900 placeholder-slate-400"
-                placeholder="kimal12"
+                placeholder="Enter your username"
                 required
               />
             </div>
 
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-2">Password</label>
-              {/* DITAMBAH autoComplete="new-password" DI SINI */}
               <input
                 type="password"
                 value={password}
