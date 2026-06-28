@@ -6,6 +6,10 @@ import { supabase } from "../../lib/supabase";
 import Sidebar from "../../components/Sidebar";
 import Header from "../../components/Header";
 
+// IMPORT PEMALAR DAN UTILITI RBAC YANG BARU
+import { ROUTES } from "../../constants";
+import { isAdmin } from "../../utils/rbac";
+
 export default function SettingsPage() {
   const router = useRouter();
   const [user, setUser] = useState(null);
@@ -76,17 +80,18 @@ export default function SettingsPage() {
   useEffect(() => {
     const checkUserAndRole = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return router.push("/login");
+      if (!session) return router.push(ROUTES.LOGIN); // GUNA PEMALAR ROUTES
 
-      // ROLE VERIFICATION: Admin Only
+      // ROLE VERIFICATION: Admin Only menggunakan fail rbac.js
       const { data: profile } = await supabase
         .from("user_roles")
         .select("role")
         .eq("email", session.user.email)
         .maybeSingle();
 
-      if (!profile || profile.role?.toLowerCase() !== "admin") {
-        return router.push("/account"); // Redirect non-admins to their profile
+      // JIKA BUKAN ADMIN, TENDANG KE HALAMAN AKAUN
+      if (!profile || !isAdmin(profile.role)) {
+        return router.push(ROUTES.ACCOUNT); 
       }
 
       setUser(session.user);
